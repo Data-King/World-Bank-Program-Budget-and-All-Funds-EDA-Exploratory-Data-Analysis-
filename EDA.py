@@ -121,3 +121,94 @@ plt.imshow(wordcloud, interpolation='bilinear')
 plt.axis('off')
 plt.title('Word Cloud of Notes')
 plt.show()
+
+
+
+
+
+
+
+
+
+
+# Perform advanced analysis techniques
+
+# 1. Time Series Decomposition
+from statsmodels.tsa.seasonal import seasonal_decompose
+
+# Prepare time series data
+ts_data = df.groupby('Fiscal Year')['Bank Budget (BB) (US$, Millions)'].sum()
+ts_data.index = pd.to_datetime(ts_data.index, format='%Y')
+
+# Perform decomposition
+result = seasonal_decompose(ts_data, model='additive', period=1)
+
+# Plot decomposition
+fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(12, 16))
+result.observed.plot(ax=ax1)
+ax1.set_title('Observed')
+result.trend.plot(ax=ax2)
+ax2.set_title('Trend')
+result.seasonal.plot(ax=ax3)
+ax3.set_title('Seasonal')
+result.resid.plot(ax=ax4)
+ax4.set_title('Residual')
+plt.tight_layout()
+plt.show()
+
+# 2. Principal Component Analysis (PCA)
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+# Prepare data for PCA
+numeric_cols = ['Bank Budget (BB) (US$, Millions)', 'All Funds (US$, Millions)']
+X = df[numeric_cols].dropna()
+X_scaled = StandardScaler().fit_transform(X)
+
+# Perform PCA
+pca = PCA()
+pca_result = pca.fit_transform(X_scaled)
+
+# Plot explained variance ratio
+plt.figure(figsize=(10, 6))
+plt.plot(range(1, len(pca.explained_variance_ratio_) + 1), pca.explained_variance_ratio_.cumsum(), 'bo-')
+plt.xlabel('Number of Components')
+plt.ylabel('Cumulative Explained Variance Ratio')
+plt.title('PCA: Explained Variance Ratio')
+plt.show()
+
+# 3. Cluster Analysis
+from sklearn.cluster import KMeans
+
+# Perform K-means clustering
+kmeans = KMeans(n_clusters=3, random_state=42)
+df['Cluster'] = kmeans.fit_predict(X_scaled)
+
+# Visualize clusters
+plt.figure(figsize=(12, 8))
+scatter = plt.scatter(X['Bank Budget (BB) (US$, Millions)'], X['All Funds (US$, Millions)'], 
+                      c=df['Cluster'], cmap='viridis')
+plt.xlabel('Bank Budget (BB) (US$, Millions)')
+plt.ylabel('All Funds (US$, Millions)')
+plt.title('K-means Clustering of Budget Data')
+plt.colorbar(scatter)
+plt.show()
+
+# 4. Network Analysis of Work Program Groups
+import networkx as nx
+
+# Create a graph
+G = nx.Graph()
+
+# Add nodes and edges based on Work Program Group and Work Program
+for _, row in df.iterrows():
+    G.add_edge(row['Work Program Group'], row['Work Program'])
+
+# Plot the network
+plt.figure(figsize=(15, 10))
+pos = nx.spring_layout(G)
+nx.draw(G, pos, with_labels=True, node_color='lightblue', 
+        node_size=3000, font_size=8, font_weight='bold')
+plt.title('Network of Work Program Groups and Programs')
+plt.axis('off')
+plt.show()
